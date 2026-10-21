@@ -10,6 +10,7 @@
  *
  * Output (ignored by git): public/toilets/{public,semipublic}.geojsonl and
  * public/toilets/assets/. Re-running replaces the previous import.
+ * See docs/TOILETS.md.
  */
 import { createReadStream, existsSync } from 'node:fs';
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises';
