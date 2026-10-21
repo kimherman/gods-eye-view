@@ -2971,5 +2971,16 @@
     "other": "{rating}/10 · {count} reseñas"
   },
   "Public Toilets": "Aseos públicos",
-  "Semi-public Toilets": "Aseos semipúblicos"
+  "Semi-public Toilets": "Aseos semipúblicos",
+  "Sanitary bin: women": "Contenedor higiénico: mujeres",
+  "Sanitary bin: men": "Contenedor higiénico: hombres",
+  "Sanitary bin: gender-neutral": "Contenedor higiénico: género neutro",
+  "Sanitary bin: wheelchair": "Contenedor higiénico: silla de ruedas",
+  "Getting in": "Acceso",
+  "Fittings and dimensions": "Equipamiento y medidas",
+  "Room to move": "Espacio de maniobra",
+  "{met} of {total} criteria met": "{met} de {total} criterios cumplidos",
+  "Wheelchair accessibility": "Accesibilidad en silla de ruedas",
+  "Yes": "Sí",
+  "No": "No"
 }

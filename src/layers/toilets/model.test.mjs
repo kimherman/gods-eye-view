@@ -66,3 +66,42 @@ test('toiletCardModel builds the card copy and asset URLs', () => {
   assert.equal(card.logo, '/toilets/assets/logo/a.png');
   assert.deepEqual(card.photos, ['/toilets/assets/toilet/1/b.jpg']);
 });
+
+test('toiletCardModel groups the answered wheelchair checklist', () => {
+  const card = toiletCardModel(
+    {
+      facilities: { femaleBin: true },
+      wheelchairChecklist: [
+        {
+          group: 'Accessibility',
+          question: 'Route at least 85 cm wide.',
+          description: null,
+          images: ['assets/accessibility/questions/accessibility-1.svg'],
+          answer: true,
+        },
+        {
+          group: 'MovementWithinToiletSpace',
+          question: 'A clear turning circle of 150 cm.',
+          images: [],
+          answer: false,
+        },
+        { group: 'Accessibility', question: 'Unanswered', answer: null },
+      ],
+    },
+    { assetBase: '/toilets/', now: at('10:00') },
+  );
+  assert.deepEqual(card.facilities, ['Sanitary bin: women']);
+  assert.deepEqual(
+    card.checklist.map((group) => [group.title, group.items.length]),
+    [
+      ['Getting in', 1],
+      ['Room to move', 1],
+    ],
+  );
+  assert.deepEqual(card.checklist[0].items[0].images, [
+    '/toilets/assets/accessibility/questions/accessibility-1.svg',
+  ]);
+  assert.equal(card.checklist[1].items[0].ok, false);
+  assert.equal(card.checklistSummary, '1 of 2 criteria met');
+  assert.equal(toiletCardModel({}).checklistSummary, null);
+});

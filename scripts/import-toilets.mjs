@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Convert the Hogenood world toilet export into the GeoJSON Lines files the
- * toilet layers load, and copy the logos and photos those files reference.
+ * toilet layers load, and copy the logos, photos and accessibility
+ * illustrations those files reference.
  *
  * Usage: npm run toilets:import -- [data-dir]
  *   data-dir defaults to $TOILETS_DATA_DIR, then ../hogenood-belgium/data.
@@ -49,6 +50,26 @@ function assetLink(link, dataDir, assets) {
 }
 
 /**
+ * The answered items of a record's wheelchair checklist, in question order.
+ * Every record lists all questions; most leave every answer null.
+ */
+export function wheelchairChecklist(items, dataDir, assets = new Set()) {
+  return (items || [])
+    .filter((item) => typeof item?.answer === 'boolean' && item.question)
+    .sort((a, b) => (a.question.id ?? 0) - (b.question.id ?? 0))
+    .map(({ question, answer }) => ({
+      group: text(question.groupName),
+      question: text(question.question),
+      description: text(question.description),
+      images: (question.images || [])
+        .map((image) => assetLink(image?.path, dataDir, assets))
+        .filter(Boolean),
+      answer,
+    }))
+    .filter((item) => item.question);
+}
+
+/**
  * Map one Hogenood record to a GeoJSON Feature, or null without coordinates.
  * @param {object} record Raw world_toilets record.
  * @param {string} dataDir Folder the record's asset links resolve against.
@@ -93,7 +114,16 @@ export function toiletFeature(record, dataDir, assets = new Set()) {
         baby: access.hasBabyCleaningTable === true,
         adultChanging: access.hasAdultCleaningTable === true,
         eurokey: access.hasEurokey === true,
+        femaleBin: access.hasFemaleBin === true,
+        maleBin: access.hasMaleBin === true,
+        genderNeutralBin: access.hasGenderNeutralBin === true,
+        wheelchairBin: access.hasWheelchairBin === true,
       },
+      wheelchairChecklist: wheelchairChecklist(
+        record.wheelchairAccessibility,
+        dataDir,
+        assets,
+      ),
       hours: weeklyHours(record.openingTimes),
       closedOnHolidays: record.closedOnHolidays === true,
       rating: record.ratingCount > 0 ? record.rating : null,

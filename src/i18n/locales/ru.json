@@ -3039,5 +3039,16 @@
     "other": "{rating}/10 · {count} отзыва"
   },
   "Public Toilets": "Общественные туалеты",
-  "Semi-public Toilets": "Полуобщественные туалеты"
+  "Semi-public Toilets": "Полуобщественные туалеты",
+  "Sanitary bin: women": "Гигиеническая урна: женский",
+  "Sanitary bin: men": "Гигиеническая урна: мужской",
+  "Sanitary bin: gender-neutral": "Гигиеническая урна: для всех",
+  "Sanitary bin: wheelchair": "Гигиеническая урна: для колясок",
+  "Getting in": "Вход",
+  "Fittings and dimensions": "Оснащение и размеры",
+  "Room to move": "Свободное пространство",
+  "{met} of {total} criteria met": "Выполнено критериев: {met} из {total}",
+  "Wheelchair accessibility": "Доступность для колясок",
+  "Yes": "Да",
+  "No": "Нет"
 }

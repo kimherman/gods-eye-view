@@ -116,6 +116,38 @@ export function createToiletCard({ assetBase, onClose }) {
       week.append(el('p', 'toilet-card__meta', t('Closed on public holidays')));
     root.append(week);
 
+    if (card.checklist.length) {
+      const access = el('details', 'toilet-card__access');
+      const summary = el('summary', null, t('Wheelchair accessibility'));
+      summary.append(el('span', 'toilet-card__meta', card.checklistSummary));
+      access.append(summary);
+      for (const group of card.checklist) {
+        if (group.title) access.append(el('h3', null, group.title));
+        const list = el('ul');
+        for (const item of group.items) {
+          const row = el('li', item.ok ? 'is-met' : 'is-unmet');
+          const mark = el('span', 'toilet-card__mark', item.ok ? '✓' : '✗');
+          mark.setAttribute('aria-label', item.ok ? t('Yes') : t('No'));
+          const body = el('div');
+          body.append(el('p', null, item.question));
+          if (item.description)
+            body.append(el('p', 'toilet-card__meta', item.description));
+          for (const src of item.images) {
+            const img = el('img');
+            img.src = src;
+            img.alt = '';
+            img.loading = 'lazy';
+            img.addEventListener('error', () => img.remove());
+            body.append(img);
+          }
+          row.append(mark, body);
+          list.append(row);
+        }
+        access.append(list);
+      }
+      root.append(access);
+    }
+
     const meta = [
       card.rating,
       card.partner,

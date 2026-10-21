@@ -160,6 +160,60 @@
   color: var(--toilet-accent);
 }
 
+.toilet-card__access summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.toilet-card__access summary .toilet-card__meta {
+  margin-left: 8px;
+}
+
+.toilet-card__access h3 {
+  margin: 10px 0 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--toilet-accent);
+}
+
+.toilet-card__access ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.toilet-card__access li {
+  display: flex;
+  gap: 8px;
+}
+
+.toilet-card__mark {
+  flex: none;
+  width: 16px;
+  font-weight: 700;
+}
+
+.toilet-card__access .is-met .toilet-card__mark {
+  color: #39ff88;
+}
+
+.toilet-card__access .is-unmet .toilet-card__mark {
+  color: #ff7a7a;
+}
+
+.toilet-card__access img {
+  display: inline-block;
+  height: 56px;
+  margin: 4px 6px 0 0;
+  padding: 4px;
+  border-radius: 6px;
+  background: #fff;
+}
+
 @media (max-width: 900px) {
   .toilet-card {
     top: auto;

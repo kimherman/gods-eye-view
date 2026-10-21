@@ -29,7 +29,45 @@ const FACILITY_LABELS = [
   ['baby', msg('Baby changing')],
   ['adultChanging', msg('Adult changing')],
   ['eurokey', msg('Eurokey')],
+  ['femaleBin', msg('Sanitary bin: women')],
+  ['maleBin', msg('Sanitary bin: men')],
+  ['genderNeutralBin', msg('Sanitary bin: gender-neutral')],
+  ['wheelchairBin', msg('Sanitary bin: wheelchair')],
 ];
+
+// The source's checklist groups; unknown groups keep the source name.
+const CHECKLIST_GROUPS = {
+  Accessibility: msg('Getting in'),
+  LocationAndDimensions: msg('Fittings and dimensions'),
+  MovementWithinToiletSpace: msg('Room to move'),
+};
+
+/**
+ * Group the answered wheelchair checklist for display, in source order.
+ * Question text comes from the source in English and is shown as-is.
+ * @param {Array<object>} items `wheelchairChecklist` from the import.
+ * @param {function(string):string|null} asset Resolves an asset path.
+ */
+export function checklistGroups(items, asset = (rel) => rel) {
+  const groups = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    if (typeof item?.answer !== 'boolean' || !item.question) continue;
+    const key = item.group || '';
+    if (!groups.has(key)) {
+      groups.set(key, {
+        title: CHECKLIST_GROUPS[key] ? t(CHECKLIST_GROUPS[key]) : key,
+        items: [],
+      });
+    }
+    groups.get(key).items.push({
+      question: item.question,
+      description: item.description || null,
+      ok: item.answer,
+      images: (item.images || []).map(asset).filter(Boolean),
+    });
+  }
+  return [...groups.values()];
+}
 
 const minutes = (hhmm) => {
   const [h, m] = String(hhmm).split(':').map(Number);
@@ -126,6 +164,8 @@ export function toiletCardModel(
   const sunday = new Date(now);
   sunday.setDate(now.getDate() - now.getDay());
   const price = costLabel(props.cost, props.currency);
+  const checklist = checklistGroups(props.wheelchairChecklist, asset);
+  const answered = checklist.flatMap((group) => group.items);
   const payment = [props.cash && t('cash'), props.card && t('card')]
     .filter(Boolean)
     .join(' / ');
@@ -171,6 +211,13 @@ export function toiletCardModel(
             },
           )
         : null,
+    checklist,
+    checklistSummary: answered.length
+      ? t('{met} of {total} criteria met', {
+          met: answered.filter((item) => item.ok).length,
+          total: answered.length,
+        })
+      : null,
     note: props.note || null,
     partner:
       props.partner && props.partner !== 'Onbekend' ? props.partner : null,
