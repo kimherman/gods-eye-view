@@ -31,6 +31,7 @@ import { createApplicationCables } from './layers/submarineCables.js';
 import { createApplicationStreetLevel } from './layers/streetLevel.js';
 import { createInfrastructureLayers } from '../data/infrastructure.js';
 import { localGeoJsonServices } from './localGeojsonServices.js';
+import { createApplicationToilets } from './layers/toilets.js';
 import { createBhoteKoshiEventLayer } from '../data/bhoteKoshiEvent.js';
 import { createBhoteKoshiLocatorLayer } from '../data/bhoteKoshiLocator.js';
 
@@ -40,6 +41,9 @@ import { createBhoteKoshiLocatorLayer } from '../data/bhoteKoshiLocator.js';
  */
 export const LOCAL_ONLY_LAYER_METADATA = Object.freeze([
   Object.freeze({ id: 'local-adsb', disposition: 'local-only' }),
+  // Fork-only layers stay out of share links, so no upstream token can collide.
+  Object.freeze({ id: 'toilets-public', disposition: 'local-only' }),
+  Object.freeze({ id: 'toilets-semipublic', disposition: 'local-only' }),
 ]);
 
 /** Serialization metadata for every layer the application catalog constructs. */
@@ -167,6 +171,7 @@ export function createApplicationCatalog({
         }),
         createCyclonesLayer({ feed: sources.cyclones }),
         ...createInfrastructureLayers(localGeoJsonServices),
+        ...createApplicationToilets(),
         createApplicationCables({ source: sources.cables }),
         createApplicationFirms({
           surface,

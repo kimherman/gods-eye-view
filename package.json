@@ -43,6 +43,7 @@
     "dev": "vite",
     "dev:secure": "./scripts/dev-secure.sh",
     "opensky:import": "./scripts/opensky-import-client.sh",
+    "toilets:import": "node scripts/import-toilets.mjs",
     "build": "vite build",
     "build:panel": "node scripts/build-panel.mjs",
     "preview": "vite preview",

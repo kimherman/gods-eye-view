@@ -393,6 +393,18 @@ const layers = [
     noQuery: 'cable records are not loaded for queries',
   },
   {
+    id: 'toilets-public',
+    aliases: ['public toilets', 'toilets', 'restrooms', 'public restrooms'],
+    context: true,
+    noQuery: 'toilet records are not loaded for queries',
+  },
+  {
+    id: 'toilets-semipublic',
+    aliases: ['semi-public toilets', 'semipublic toilets', 'customer toilets'],
+    context: true,
+    noQuery: 'toilet records are not loaded for queries',
+  },
+  {
     // Global Context owns this layer; voice reaches it through
     // set_context_mode, never a bare toggle.
     id: 'military-awareness',

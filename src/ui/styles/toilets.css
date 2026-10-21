@@ -1,0 +1,160 @@
+/* Toilet detail card (src/layers/toilets/card.js). */
+.toilet-card {
+  --toilet-accent: #ffb347;
+  position: fixed;
+  top: 84px;
+  right: calc(var(--right-rail-x) + 16px);
+  z-index: 40;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100vh - 168px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--toilet-accent);
+  border-radius: var(--panel-radius);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toilet-card[data-type='public'] {
+  --toilet-accent: #39ff88;
+}
+
+.toilet-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.toilet-card__logo {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.toilet-card__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.toilet-card__type {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--toilet-accent);
+}
+
+.toilet-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.toilet-card__close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toilet-card__close:hover {
+  border-color: var(--glass-border-hover);
+  color: var(--text-primary);
+}
+
+.toilet-card__address,
+.toilet-card__note,
+.toilet-card__meta {
+  color: var(--text-secondary);
+}
+
+.toilet-card__meta {
+  font-size: 11px;
+}
+
+.toilet-card__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.toilet-card__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.toilet-card__badge--open {
+  background: rgba(57, 255, 136, 0.15);
+  color: #39ff88;
+}
+
+.toilet-card__badge--closed {
+  background: rgba(255, 90, 90, 0.15);
+  color: #ff7a7a;
+}
+
+.toilet-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+}
+
+.toilet-card__chips li {
+  padding: 2px 8px;
+  border: 1px solid var(--glass-border-hover);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.toilet-card__photos {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.toilet-card__photos img {
+  display: block;
+  height: 96px;
+  border-radius: 8px;
+}
+
+.toilet-card__week summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.toilet-card__week dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.toilet-card__week .is-today {
+  color: var(--toilet-accent);
+}
