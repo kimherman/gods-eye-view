@@ -27,6 +27,14 @@ const LOCAL_OVERLAY_CELL_SURPLUS = 2;
 // height once per feature and lift the stem onto it.
 const GROUND_SAMPLE_MAX_DISTANCE_M = 75000;
 const GROUND_SAMPLE_RETRY_MS = 2000;
+/**
+ * Each scene.sampleHeight is a full pick render plus a GPU readback (~5-15 ms).
+ * Unbudgeted, a dense layer (~10k toilets) samples hundreds of records per walk
+ * and pins the main thread; the rest wait for later walks.
+ */
+const GROUND_SAMPLES_PER_WALK = 4;
+/** A record whose sample keeps failing backs off 2 s, 4 s, … up to 64 s. */
+const GROUND_SAMPLE_MAX_BACKOFF_STEPS = 5;
 const GROUND_SAMPLE_MAX_ABS_HEIGHT_M = 9000;
 /**
  * Bounded give-up for the self-armed retry. Sampling can be SUPPORTED and still
@@ -916,6 +924,7 @@ export function createLocalGeoJsonLayer(
           _lastGroundSampleCapability = canSampleGround;
           let groundRetryPending = false;
           let groundSampleProgress = false;
+          const sampleBudget = { left: GROUND_SAMPLES_PER_WALK };
 
           // --- Globe-LOD: recompute the active-stem set on camera moves. ---
           // `_stemGeometryDirty` is set by moveEnd, the first enable, and the
@@ -979,11 +988,12 @@ export function createLocalGeoJsonLayer(
               record,
             );
             if (refreshStemGeometry || terrainFloorChanged) {
-              updateLocalStemGeometry(viewer, record, now);
+              updateLocalStemGeometry(viewer, record, now, null, sampleBudget);
             } else if (
               canSampleGround &&
               !record.groundSampled &&
-              now - record.lastGroundSampleMs >= GROUND_SAMPLE_RETRY_MS
+              sampleBudget.left > 0 &&
+              now - record.lastGroundSampleMs >= groundSampleRetryMs(record)
             ) {
               // Capability first: without it the distance below is pure waste,
               // once per ungrounded record per walk, forever.
@@ -993,7 +1003,7 @@ export function createLocalGeoJsonLayer(
               );
               if (
                 distance < GROUND_SAMPLE_MAX_DISTANCE_M &&
-                sampleLocalGroundHeight(viewer, record, now)
+                sampleLocalGroundHeight(viewer, record, now, sampleBudget)
               ) {
                 updateLocalStemGeometry(viewer, record, now, distance);
               }
@@ -1051,6 +1061,9 @@ export function createLocalGeoJsonLayer(
           // and its frames are free, so it re-opens the retry budget that a
           // parked camera may have spent.
           _groundRetryArms = 0;
+          // …and the per-record failure backoff: tiles under the new view
+          // may well be sampleable now.
+          for (const record of _stemRecords) record.groundSampleFailures = 0;
           viewer.scene.requestRender?.();
         });
       }
@@ -1135,23 +1148,37 @@ function refreshLocalTerrainFloor(viewer, record) {
   return true;
 }
 
-function sampleLocalGroundHeight(viewer, record, now) {
+function groundSampleRetryMs(record) {
+  const steps = Math.min(
+    Math.max((record.groundSampleFailures || 0) - 1, 0),
+    GROUND_SAMPLE_MAX_BACKOFF_STEPS,
+  );
+  return GROUND_SAMPLE_RETRY_MS * 2 ** steps;
+}
+
+function sampleLocalGroundHeight(viewer, record, now, budget = null) {
   if (record.groundSampled || !viewer.scene.sampleHeightSupported) return false;
-  if (now - record.lastGroundSampleMs < GROUND_SAMPLE_RETRY_MS) return false;
+  if (now - record.lastGroundSampleMs < groundSampleRetryMs(record))
+    return false;
+  // Out of budget: leave lastGroundSampleMs alone so the next walk retries.
+  if (budget && budget.left <= 0) return false;
   record.lastGroundSampleMs = now;
   const globe = viewer.scene.globe;
   if (globe?.show && globe.tilesLoaded === false) return false;
+  if (budget) budget.left--;
   let sampled;
   try {
     sampled = viewer.scene.sampleHeight(record.carto, [record.entity]);
   } catch {
-    return false; // tiles not ready; retry on a later bounded update
+    sampled = undefined; // tiles not ready; retry on a later bounded update
   }
   if (
     !Number.isFinite(sampled) ||
     Math.abs(sampled) > GROUND_SAMPLE_MAX_ABS_HEIGHT_M
-  )
+  ) {
+    record.groundSampleFailures = (record.groundSampleFailures || 0) + 1;
     return false;
+  }
   // A coarse scene-depth sample can lie below the terrain already loaded by
   // the visible globe. Keep that terrain as a floor while allowing roofs and
   // valid below-sea-level elevations. Photoreal scenes hide the globe, so its
@@ -1182,12 +1209,18 @@ function setLocalGroundHeight(record, height) {
   record.entity.__localBaseCartesian = record.base;
 }
 
-function updateLocalStemGeometry(viewer, record, now, knownDistance = null) {
+function updateLocalStemGeometry(
+  viewer,
+  record,
+  now,
+  knownDistance = null,
+  sampleBudget = null,
+) {
   const distance = Number.isFinite(knownDistance)
     ? knownDistance
     : Cesium.Cartesian3.distance(viewer.camera.positionWC, record.base);
   if (distance < GROUND_SAMPLE_MAX_DISTANCE_M)
-    sampleLocalGroundHeight(viewer, record, now);
+    sampleLocalGroundHeight(viewer, record, now, sampleBudget);
   // Keep the intended screen-size scaling in close-up views too. A 5 km
   // minimum made a marker hundreds of metres tall beside a nearby building.
   const effectiveDistance = Math.max(distance, 1);
