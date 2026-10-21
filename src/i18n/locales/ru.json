@@ -3050,5 +3050,7 @@
   "{met} of {total} criteria met": "Выполнено критериев: {met} из {total}",
   "Wheelchair accessibility": "Доступность для колясок",
   "Yes": "Да",
-  "No": "Нет"
+  "No": "Нет",
+  "Show only toilets that are open right now": "Показывать только туалеты, открытые прямо сейчас",
+  "{count} open now": "Открыто сейчас: {count}"
 }

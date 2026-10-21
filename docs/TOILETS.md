@@ -129,6 +129,22 @@ Translations: card labels go through `t()` / `tn()` / `msg()`, with Spanish and
 Russian in `src/i18n/locales/`. Text from the data (names, notes, checklist
 questions) is shown as-is. `npm run i18n` must report both locales complete.
 
+## Open now filter
+
+With a toilet layer switched on, its row in the panel shows an **Open now**
+chip. Turning it on hides every toilet that is closed at this moment, using the
+viewer's local clock and the same rules as the card's Open now badge, including
+overnight slots. The row count changes to "1,383 open now" (or similar).
+
+- Each layer has its own chip, and the setting resets on reload.
+- Open status is re-checked every minute while the chip is on.
+- Hidden toilets can't be clicked, and their share of the 420-stem and label
+  budgets goes to toilets that are open.
+
+The filter uses `setRecordFilter(filter)` on the shared local GeoJSON layer:
+`filter` gets a record's properties and returns whether to show it, and `null`
+shows everything.
+
 ## Code map
 
 | File                                           | Role                                                                             |
@@ -185,7 +201,8 @@ With 9,200 points the semi-public layer froze the app. Two fixes in
    took sampling from 2,030 calls (23.5 s of main thread) to 48 (1.3 s). Stems
    near the camera now settle onto the ground over a few seconds.
 
-These fixes are not offered upstream (decided 2026-10-22).
+These fixes are not offered upstream (decided 2026-10-22). The same file also
+gained `setRecordFilter()` for the Open now filter.
 
 ## Maintaining the fork
 

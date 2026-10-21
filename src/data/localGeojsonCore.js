@@ -345,6 +345,12 @@ export function createLocalGeoJsonLayer(
   let _preRenderRemover = null;
   let _cameraMoveEndRemover = null;
   let _stemRecords = [];
+  /**
+   * Optional record filter, `(properties) => boolean`. Records it rejects are
+   * hidden, unpickable and left out of the LOD and label budgets. Applied by
+   * setRecordFilter() and to records built while it is set.
+   */
+  let _recordFilter = null;
   let _stemGeometryDirty = true;
   let _lastVisibilityUpdate = 0;
   let _destroyed = false;
@@ -485,12 +491,40 @@ export function createLocalGeoJsonLayer(
     }
   };
 
+  function passesRecordFilter(properties) {
+    if (!_recordFilter) return true;
+    try {
+      return Boolean(_recordFilter(properties));
+    } catch {
+      return true; // a broken filter must not blank the layer
+    }
+  }
+
   return {
     id,
     name,
     icon,
     source,
     updateInterval: 0,
+
+    /**
+     * Show only records whose properties pass `filter`; null shows all.
+     * Call again to re-evaluate a time-dependent filter.
+     * @param {((properties:object) => boolean)|null} filter
+     * @returns {{shown:number, total:number}}
+     */
+    setRecordFilter(filter) {
+      _recordFilter = typeof filter === 'function' ? filter : null;
+      let shown = 0;
+      for (const record of _stemRecords) {
+        record.passesFilter = passesRecordFilter(record.properties);
+        if (record.passesFilter) shown++;
+      }
+      _stemGeometryDirty = true;
+      _lastVisibilityUpdate = Number.NEGATIVE_INFINITY;
+      governorRequestRender?.(`local-filter:${id}`);
+      return { shown, total: _stemRecords.length };
+    },
     statsRefreshInterval: 1000,
 
     init: async (viewer) => {
@@ -745,6 +779,8 @@ export function createLocalGeoJsonLayer(
                 _stemRecords.push({
                   id: recordId,
                   entity: feature,
+                  properties,
+                  passesFilter: passesRecordFilter(properties),
                   carto,
                   base,
                   tip,
@@ -936,15 +972,16 @@ export function createLocalGeoJsonLayer(
           // The occluder test is the same cheap dot product used below.
           if (refreshStemGeometry && _stemRecords.length > 0) {
             const cameraHeightM = viewer.camera.positionCartographic?.height;
-            const candidates = new Array(_stemRecords.length);
+            const candidates = [];
             for (let i = 0; i < _stemRecords.length; i++) {
               const record = _stemRecords[i];
-              candidates[i] = {
+              if (!record.passesFilter) continue;
+              candidates.push({
                 id: record.id,
                 priority: record.priority,
                 distanceM: Cesium.Cartesian3.distance(cameraPos, record.base),
                 inView: occluder.isPointVisible(record.base),
-              };
+              });
             }
             const selection = selectInfraLod(candidates, {
               cameraHeightM,
@@ -971,7 +1008,9 @@ export function createLocalGeoJsonLayer(
 
           for (let i = 0; i < _stemRecords.length; i++) {
             const record = _stemRecords[i];
-            const isActive = !_lodComputed || _activeLodIds.has(record.id);
+            const isActive =
+              record.passesFilter &&
+              (!_lodComputed || _activeLodIds.has(record.id));
             const isVisible = isActive && occluder.isPointVisible(record.base);
             if (record.entity.show !== isVisible)
               record.entity.show = isVisible;

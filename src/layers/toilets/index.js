@@ -1,7 +1,70 @@
 import { createLocalGeoJsonLayer } from '../../data/localGeojsonCore.js';
+import { formatNumber, t } from '../../i18n/index.js';
 import { createToiletCard } from './card.js';
-import { TOILET_LAYERS } from './model.js';
+import { isOpenAt, TOILET_LAYERS } from './model.js';
 export * from './model.js';
+
+/** Opening status changes by the minute; re-check this often while filtered. */
+const OPEN_NOW_REFRESH_MS = 60_000;
+
+/**
+ * Add an "Open now" row chip that hides toilets that are closed, or whose
+ * hours are unknown, at the current time.
+ * @param {object} layer A local GeoJSON layer.
+ */
+function addOpenNowFilter(layer) {
+  let openOnly = false;
+  let shown = null;
+  let filteredCount = null;
+  let timer = null;
+  let listener = null;
+  const { getStats, destroy } = layer;
+
+  const apply = () => {
+    const now = new Date();
+    const result = layer.setRecordFilter(
+      openOnly ? (props) => isOpenAt(props?.hours, now) === true : null,
+    );
+    shown = openOnly ? result.shown : null;
+    filteredCount = result.total;
+    listener?.();
+  };
+
+  layer.getRowControls = () => ({
+    chips: [
+      {
+        id: 'open-now',
+        label: t('Open now'),
+        active: openOnly,
+        title: t('Show only toilets that are open right now'),
+        onClick: () => {
+          openOnly = !openOnly;
+          clearInterval(timer);
+          timer = openOnly ? setInterval(apply, OPEN_NOW_REFRESH_MS) : null;
+          apply();
+        },
+      },
+    ],
+  });
+  layer.setRowControlsListener = (value) => {
+    listener = typeof value === 'function' ? value : null;
+  };
+  layer.getStats = (...args) => {
+    const stats = getStats.apply(layer, args);
+    if (!openOnly) return stats;
+    // The data loaded (or reloaded) after the chip was set: recount.
+    if (stats.count !== filteredCount) apply();
+    return {
+      ...stats,
+      countLabel: t('{count} open now', { count: formatNumber(shown ?? 0) }),
+    };
+  };
+  layer.destroy = (...args) => {
+    clearInterval(timer);
+    timer = null;
+    return destroy.apply(layer, args);
+  };
+}
 
 /**
  * Create the public and semi-public toilet layers from the files written by
@@ -30,6 +93,7 @@ export function createToiletLayers(services, { baseUrl = '/' } = {}) {
       },
       services,
     );
+    addOpenNowFilter(layer);
     const { init, destroy } = layer;
     layer.init = (...args) => {
       if (live++ === 0) {

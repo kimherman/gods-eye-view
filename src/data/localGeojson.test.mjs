@@ -783,6 +783,31 @@ for (const [terrainHeight, sampledHeight, expectedHeight, globeShown] of [
   });
 }
 
+test('setRecordFilter hides rejected records and restores them when cleared', async (t) => {
+  const env = await createRealLocalLayerHarness();
+  t.after(() => { env.layer.destroy(env.viewer); env.cleanup(); });
+  const entity = env.dataSources[0].entities.values[0];
+  env.preRender.raise();
+  assert.equal(entity.show, true, 'unfiltered record is shown');
+
+  assert.deepEqual(
+    env.layer.setRecordFilter((props) => props.name !== 'Runtime Dam'),
+    { shown: 0, total: 1 },
+  );
+  env.preRender.raise();
+  assert.equal(entity.show, false, 'a rejected record is hidden on the next walk');
+
+  assert.deepEqual(env.layer.setRecordFilter(null), { shown: 1, total: 1 });
+  env.preRender.raise();
+  assert.equal(entity.show, true, 'clearing the filter shows it again');
+
+  assert.deepEqual(
+    env.layer.setRecordFilter(() => { throw new Error('broken'); }),
+    { shown: 1, total: 1 },
+    'a throwing filter must not blank the layer',
+  );
+});
+
 test('a failed ground sample schedules the retry frame the idle governor would never produce', async (t) => {
   const env = await createRealLocalLayerHarness({ sampleHeightSupported: true });
   _resetRenderGovernorForTest();

@@ -2982,5 +2982,7 @@
   "{met} of {total} criteria met": "{met} de {total} criterios cumplidos",
   "Wheelchair accessibility": "Accesibilidad en silla de ruedas",
   "Yes": "Sí",
-  "No": "No"
+  "No": "No",
+  "Show only toilets that are open right now": "Mostrar solo los baños abiertos ahora mismo",
+  "{count} open now": "{count} abiertos ahora"
 }
