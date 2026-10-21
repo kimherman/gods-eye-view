@@ -3,8 +3,9 @@
   --toilet-accent: #ffb347;
   position: fixed;
   top: 84px;
-  right: calc(var(--right-rail-x) + 16px);
-  z-index: 40;
+  /* Clear the collapsed right rail (Display, CCTV, …) instead of sitting under it. */
+  right: calc(var(--right-rail-x) + var(--left-collapsed-width) + 16px);
+  z-index: 60;
   width: min(340px, calc(100vw - 32px));
   max-height: calc(100vh - 168px);
   overflow-y: auto;
@@ -157,4 +158,15 @@
 
 .toilet-card__week .is-today {
   color: var(--toilet-accent);
+}
+
+@media (max-width: 900px) {
+  .toilet-card {
+    top: auto;
+    right: 16px;
+    bottom: 112px;
+    left: 16px;
+    width: auto;
+    max-height: 50vh;
+  }
 }
