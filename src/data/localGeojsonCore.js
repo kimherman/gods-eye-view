@@ -642,6 +642,11 @@ export function createLocalGeoJsonLayer(
               for (let i = 0; i < entities.length; i++) {
                 const feature = entities[i];
                 feature.__localLayerId = id; // Tag it so our click handler knows it belongs to this layer
+                // GeoJsonDataSource gives every Point a ground-clamped pin
+                // billboard. The point + stem below replace it, and each
+                // clamped pin costs a terrain-mesh pick on load and again as
+                // tiles stream in — seconds of main thread at ~10k points.
+                feature.billboard = undefined;
 
                 let pos = feature.position?.getValue(Cesium.JulianDate.now());
 
