@@ -3052,5 +3052,8 @@
   "Yes": "Да",
   "No": "Нет",
   "Show only toilets that are open right now": "Показывать только туалеты, открытые прямо сейчас",
-  "{count} open now": "Открыто сейчас: {count}"
+  "{count} open now": "Открыто сейчас: {count}",
+  "Show only wheelchair-accessible toilets": "Показывать только туалеты, доступные для колясок",
+  "{count} wheelchair accessible": "Доступно для колясок: {count}",
+  "{count} open now, wheelchair accessible": "Открыто и доступно для колясок: {count}"
 }

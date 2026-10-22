@@ -2984,5 +2984,8 @@
   "Yes": "Sí",
   "No": "No",
   "Show only toilets that are open right now": "Mostrar solo los baños abiertos ahora mismo",
-  "{count} open now": "{count} abiertos ahora"
+  "{count} open now": "{count} abiertos ahora",
+  "Show only wheelchair-accessible toilets": "Mostrar solo baños accesibles en silla de ruedas",
+  "{count} wheelchair accessible": "{count} accesibles en silla de ruedas",
+  "{count} open now, wheelchair accessible": "{count} abiertos ahora y accesibles en silla de ruedas"
 }

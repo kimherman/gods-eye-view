@@ -1,63 +1,81 @@
 import { createLocalGeoJsonLayer } from '../../data/localGeojsonCore.js';
-import { formatNumber, t } from '../../i18n/index.js';
+import { msg, t } from '../../i18n/index.js';
 import { createToiletCard } from './card.js';
-import { isOpenAt, TOILET_LAYERS } from './model.js';
+import {
+  filterCountLabel,
+  TOILET_LAYERS,
+  toiletMatchesFilters,
+} from './model.js';
 export * from './model.js';
 
 /** Opening status changes by the minute; re-check this often while filtered. */
 const OPEN_NOW_REFRESH_MS = 60_000;
 
+const FILTER_CHIPS = [
+  {
+    id: 'open-now',
+    key: 'openNow',
+    label: msg('Open now'),
+    title: msg('Show only toilets that are open right now'),
+  },
+  {
+    id: 'wheelchair',
+    key: 'wheelchair',
+    label: msg('Wheelchair'),
+    title: msg('Show only wheelchair-accessible toilets'),
+  },
+];
+
 /**
- * Add an "Open now" row chip that hides toilets that are closed, or whose
- * hours are unknown, at the current time.
+ * Add the "Open now" and "Wheelchair" row chips. Active filters combine: a
+ * toilet must pass every one to stay on the map.
  * @param {object} layer A local GeoJSON layer.
  */
-function addOpenNowFilter(layer) {
-  let openOnly = false;
+function addToiletFilters(layer) {
+  const filters = { openNow: false, wheelchair: false };
   let shown = null;
   let filteredCount = null;
   let timer = null;
   let listener = null;
   const { getStats, destroy } = layer;
+  const anyActive = () => filters.openNow || filters.wheelchair;
 
   const apply = () => {
     const now = new Date();
+    const active = { ...filters };
     const result = layer.setRecordFilter(
-      openOnly ? (props) => isOpenAt(props?.hours, now) === true : null,
+      anyActive() ? (props) => toiletMatchesFilters(props, active, now) : null,
     );
-    shown = openOnly ? result.shown : null;
+    shown = anyActive() ? result.shown : null;
     filteredCount = result.total;
     listener?.();
   };
 
   layer.getRowControls = () => ({
-    chips: [
-      {
-        id: 'open-now',
-        label: t('Open now'),
-        active: openOnly,
-        title: t('Show only toilets that are open right now'),
-        onClick: () => {
-          openOnly = !openOnly;
-          clearInterval(timer);
-          timer = openOnly ? setInterval(apply, OPEN_NOW_REFRESH_MS) : null;
-          apply();
-        },
+    chips: FILTER_CHIPS.map((chip) => ({
+      id: chip.id,
+      label: t(chip.label),
+      active: filters[chip.key],
+      title: t(chip.title),
+      onClick: () => {
+        filters[chip.key] = !filters[chip.key];
+        clearInterval(timer);
+        timer = filters.openNow
+          ? setInterval(apply, OPEN_NOW_REFRESH_MS)
+          : null;
+        apply();
       },
-    ],
+    })),
   });
   layer.setRowControlsListener = (value) => {
     listener = typeof value === 'function' ? value : null;
   };
   layer.getStats = (...args) => {
     const stats = getStats.apply(layer, args);
-    if (!openOnly) return stats;
-    // The data loaded (or reloaded) after the chip was set: recount.
+    if (!anyActive()) return stats;
+    // The data loaded (or reloaded) after a chip was set: recount.
     if (stats.count !== filteredCount) apply();
-    return {
-      ...stats,
-      countLabel: t('{count} open now', { count: formatNumber(shown ?? 0) }),
-    };
+    return { ...stats, countLabel: filterCountLabel(shown ?? 0, filters) };
   };
   layer.destroy = (...args) => {
     clearInterval(timer);
@@ -93,7 +111,7 @@ export function createToiletLayers(services, { baseUrl = '/' } = {}) {
       },
       services,
     );
-    addOpenNowFilter(layer);
+    addToiletFilters(layer);
     const { init, destroy } = layer;
     layer.init = (...args) => {
       if (live++ === 0) {

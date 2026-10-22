@@ -134,6 +134,28 @@ export function isOpenAt(hours, now) {
   return todayOpen === null ? null : false;
 }
 
+/**
+ * Whether a toilet passes the active row filters.
+ * @param {object} props Feature properties.
+ * @param {{openNow?:boolean, wheelchair?:boolean}} filters
+ * @param {Date} now
+ */
+export function toiletMatchesFilters(props, filters, now) {
+  if (filters.wheelchair && props?.facilities?.wheelchair !== true)
+    return false;
+  if (filters.openNow && isOpenAt(props?.hours, now) !== true) return false;
+  return true;
+}
+
+/** The row count while filters are active, e.g. "1,383 open now". */
+export function filterCountLabel(count, filters) {
+  const value = { count: formatNumber(count) };
+  if (filters.openNow && filters.wheelchair)
+    return t('{count} open now, wheelchair accessible', value);
+  if (filters.wheelchair) return t('{count} wheelchair accessible', value);
+  return t('{count} open now', value);
+}
+
 /** `Free`, a formatted price, or null when the source gives no cost. */
 export function costLabel(cost, currency) {
   if (!Number.isFinite(cost)) return null;

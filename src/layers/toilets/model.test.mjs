@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { costLabel, describeSlot, isOpenAt, toiletCardModel } from './model.js';
+import {
+  costLabel,
+  describeSlot,
+  filterCountLabel,
+  isOpenAt,
+  toiletCardModel,
+  toiletMatchesFilters,
+} from './model.js';
 
 // 2026-10-21 is a Wednesday (getDay() === 3).
 const at = (hhmm) => new Date(`2026-10-21T${hhmm}:00`);
@@ -104,4 +111,40 @@ test('toiletCardModel groups the answered wheelchair checklist', () => {
   assert.equal(card.checklist[1].items[0].ok, false);
   assert.equal(card.checklistSummary, '1 of 2 criteria met');
   assert.equal(toiletCardModel({}).checklistSummary, null);
+});
+
+test('toiletMatchesFilters combines open-now and wheelchair', () => {
+  const now = at('10:00');
+  const open = {
+    hours: week('09:00-17:30'),
+    facilities: { wheelchair: false },
+  };
+  const accessible = {
+    hours: week('00:00-00:00'),
+    facilities: { wheelchair: true },
+  };
+  const both = { hours: week('09:00-17:30'), facilities: { wheelchair: true } };
+  const none = {};
+  const pass = (filters) =>
+    [open, accessible, both, none].map((props) =>
+      toiletMatchesFilters(props, filters, now),
+    );
+  assert.deepEqual(pass({}), [true, true, true, true]);
+  assert.deepEqual(pass({ openNow: true }), [true, false, true, false]);
+  assert.deepEqual(pass({ wheelchair: true }), [false, true, true, false]);
+  assert.deepEqual(pass({ openNow: true, wheelchair: true }), [
+    false,
+    false,
+    true,
+    false,
+  ]);
+  assert.equal(filterCountLabel(1383, { openNow: true }), '1,383 open now');
+  assert.equal(
+    filterCountLabel(5, { wheelchair: true }),
+    '5 wheelchair accessible',
+  );
+  assert.equal(
+    filterCountLabel(2, { openNow: true, wheelchair: true }),
+    '2 open now, wheelchair accessible',
+  );
 });
